@@ -31,6 +31,8 @@ const auth = require("./auth");
 // socket stuff
 const socket = require("./server-socket");
 
+require('dotenv').config();
+
 // Server configuration below
 // TODO change connection URL after setting up your team database
 const mongoConnectionURL = process.env.ATLAS_SRV;
@@ -95,7 +97,7 @@ app.use((err, req, res, next) => {
 });
 
 // hardcode port to 3000 for now
-const port = 3000;
+const port = process.env.PORT || 3000;
 const server = http.Server(app);
 socket.init(server);
 
