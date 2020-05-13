@@ -28,17 +28,23 @@ class Skeleton extends Component {
     let entity = {
       x:x,
       y:y,
+      drawcolor:color,
       color: color,
       bottom_y: y,
       text: text,
 
-      update: function() {
+      update: function(ctx, mousePos, camera) {
+        if(mousePos.y > this.y+camera.y && mousePos.y < this.y+camera.y + 16 && mousePos.x > this.x+camera.x && mousePos.x < this.x+camera.x + ctx.measureText(this.text).width+4) {
+          this.drawcolor = "red";
+        } else {
+          this.drawcolor = this.color;
+        }
       },
 
       draw: function(ctx, camera) {
         ctx.fillStyle = "black";
         ctx.fillRect(this.x+camera.x,this.y+camera.y,3,30);
-        ctx.fillStyle = this.color;
+        ctx.fillStyle = this.drawcolor;
         ctx.fillRect(this.x+camera.x,this.y+camera.y,ctx.measureText(this.text).width+4,16);
         ctx.fillStyle = "black";
         ctx.fillText(this.text, this.x+2+camera.x, this.y+12+camera.y);
@@ -52,6 +58,12 @@ class Skeleton extends Component {
 
   place_marker = () => {
     this.state.placeing_marker = true;
+  }
+
+  update = (ctx, mousePos) => {
+    for(var i = 0; i < this.state.entities.length; i++) {
+      this.state.entities[i].update(ctx, mousePos, this.state.camera);
+    }
   }
 
   draw = (canvas, ctx, mousePos) => {
@@ -218,7 +230,10 @@ class Skeleton extends Component {
       mouseDown = false;
     });
 
-    setInterval(() => {this.draw(canvas, ctx, mousePos);}, 1000 / 60);
+    setInterval(() => {
+      this.draw(canvas, ctx, mousePos);
+      this.update(ctx, mousePos);
+    }, 1000 / 60);
   }
 
   render() {
