@@ -150,6 +150,20 @@ class Skeleton extends Component {
       }
     });
 
+    canvas.addEventListener('touchmove', evt => {
+      mousePos = getMousePos(canvas,evt.touches[0]);
+
+      console.log("move");
+      this.setState({camera:
+      {
+        x: this.state.camera.x + (mousePos.x- drag.x),
+        y: this.state.camera.y + (mousePos.y - drag.y),
+      }});
+      drag.x = mousePos.x;
+      drag.y = mousePos.y;
+
+    });
+
     window.addEventListener("resize", function(evt) {
       canvas.width  = window.innerWidth;
       canvas.height = window.innerHeight;
@@ -175,7 +189,32 @@ class Skeleton extends Component {
       }
     });
 
+    canvas.addEventListener('touchstart', evt => {
+      mousePos = getMousePos(canvas,evt.touches[0]);
+      drag.x = mousePos.x;
+      drag.y = mousePos.y;
+      mouseDown = true;
+
+      if(this.state.placeing_marker) {
+        let post_body = {
+          x: mousePos.x-this.state.camera.x,
+          y: mousePos.y-this.state.camera.y,
+        }
+
+        post("/api/marker", post_body).then((result) => {
+          console.log("posted direction");
+        });
+
+        this.state.entities.push(this.make_marker(mousePos.x-this.state.camera.x, mousePos.y-this.state.camera.y, "rgba(0, 0, 0, 0.5)", "         "));
+        this.setState({placeing_marker : false});
+      }
+    });
+
     document.addEventListener('mouseup', function(evt) {
+      mouseDown = false;
+    });
+
+    document.addEventListener('touchend', function(evt) {
       mouseDown = false;
     });
 
