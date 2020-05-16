@@ -4,7 +4,7 @@ import { socket } from "../../client-socket.js";
 
 import "../../utilities.css";
 import "./Map.css";
-import map_img from "../../images/mapcopy.png"
+import map_img from "../../images/emonation-quality.png"
 import GoogleLogin, { GoogleLogout } from "react-google-login";
 
 const GOOGLE_CLIENT_ID = "1093231761662-gf35mnpc3a1aahb99ps4f8a4gcb6ecb5.apps.googleusercontent.com";
@@ -20,35 +20,93 @@ class Skeleton extends Component {
       placeing_marker: false,
       entities: [],
       camera: {x:0, y:0},
+      scale_factor: .5,
     };
   }
+
 
   make_marker = (x,y,color, text) => {
 
     let entity = {
       x:x,
       y:y,
-      drawcolor:color,
+      mouseOver:false,
       color: color,
       bottom_y: y,
       text: text,
 
-      update: function(ctx, mousePos, camera) {
-        if(mousePos.y > this.y+camera.y && mousePos.y < this.y+camera.y + 16 && mousePos.x > this.x+camera.x && mousePos.x < this.x+camera.x + ctx.measureText(this.text).width+4) {
-          this.drawcolor = "red";
+
+      update: function(ctx, mousePos, camera, scale_factor) {
+        if(Math.sqrt(Math.pow(mousePos.y - (this.y*scale_factor+camera.y - 10),2) +  Math.pow(mousePos.x - (this.x*scale_factor+camera.x),2)) < 20 ) {
+          this.mouseOver = true;
         } else {
-          this.drawcolor = this.color;
+          this.mouseOver = false;
         }
       },
 
-      draw: function(ctx, camera) {
-        ctx.fillStyle = "black";
-        ctx.fillRect(this.x+camera.x,this.y+camera.y,3,30);
+      LightenDarkenColor:function (col,amt) {
+        var usePound = false;
+        if ( col[0] == "#" ) {
+            col = col.slice(1);
+            usePound = true;
+        }
+
+        var num = parseInt(col,16);
+
+        var r = (num >> 16) + amt;
+
+        if ( r > 255 ) r = 255;
+        else if  (r < 0) r = 0;
+
+        var b = ((num >> 8) & 0x00FF) + amt;
+
+        if ( b > 255 ) b = 255;
+        else if  (b < 0) b = 0;
+
+        var g = (num & 0x0000FF) + amt;
+
+        if ( g > 255 ) g = 255;
+        else if  ( g < 0 ) g = 0;
+
+        return (usePound?"#":"") + (g | (b << 8) | (r << 16)).toString(16);
+    },
+
+      draw: function(ctx, camera, scale_factor) {
+        /*ctx.fillStyle = "black";
+        ctx.fillRect((this.x*scale_factor+camera.x),(this.y*scale_factor+camera.y),3,30);
         ctx.fillStyle = this.drawcolor;
-        ctx.fillRect(this.x+camera.x,this.y+camera.y,ctx.measureText(this.text).width+4,16);
+        ctx.fillRect((this.x*scale_factor+camera.x), (this.y*scale_factor+camera.y),ctx.measureText(this.text).width+4,16);
         ctx.fillStyle = "black";
-        ctx.fillText(this.text, this.x+2+camera.x, this.y+12+camera.y);
-        this.bottom_y = this.y + 10;
+        ctx.fillText(this.text, this.x*scale_factor+2+camera.x, this.y*scale_factor+12+camera.y);
+        this.bottom_y = this.y + 10;*/
+
+        ctx.save();
+
+        ctx.translate(this.x*scale_factor+camera.x, this.y*scale_factor+camera.y);
+
+        ctx.beginPath();
+        ctx.moveTo(0,0);
+        ctx.bezierCurveTo(2,-10,-20,-25,0,-30);
+        ctx.bezierCurveTo(20,-25,-2,-10,0,0);
+        ctx.fillStyle=this.color;
+        ctx.fill();
+        ctx.strokeStyle=this.LightenDarkenColor(this.color,40);
+        ctx.lineWidth=4;
+        ctx.stroke();
+        //ctx.beginPath();
+        //ctx.arc(0,-21,3,0,Math.PI*2);
+        //ctx.closePath();
+        ctx.fill();
+
+        ctx.font = '15px Sans-serif';
+        ctx.strokeStyle = 'black';
+        ctx.lineWidth = 4;
+        ctx.strokeText(this.text, -ctx.measureText(this.text).width/2, -15);
+        ctx.fillStyle = 'white';
+        ctx.fillText(this.text, -ctx.measureText(this.text).width/2, -15);
+        ctx.fillStyle="black";
+
+        ctx.restore();
       }
 
     }
@@ -60,29 +118,59 @@ class Skeleton extends Component {
     this.state.placeing_marker = true;
   }
 
+  zoom_in = () => {
+    if(this.state.scale_factor < 2.2 ) {
+      this.setState({scale_factor: this.state.scale_factor + .1});
+    }
+  }
+
+  zoom_out = () => {
+    if(this.state.scale_factor > .4) {
+      this.setState({scale_factor: this.state.scale_factor - .1});
+    }
+    console.log(this.state.scale_factor);
+  }
+
   update = (ctx, mousePos) => {
     for(var i = 0; i < this.state.entities.length; i++) {
-      this.state.entities[i].update(ctx, mousePos, this.state.camera);
+      this.state.entities[i].update(ctx, mousePos, this.state.camera, this.state.scale_factor);
     }
   }
 
   draw = (canvas, ctx, mousePos) => {
-    ctx.fillStyle = "#f7f5eb";
+    //ctx.fillStyle = "#f7f5eb";
+    ctx.fillStyle = "#e8e8e8";
     ctx.fillRect(0,0,canvas.width, canvas.height);
     var map_img = this.refs.image;
-    ctx.drawImage(map_img, this.state.camera.x,this.state.camera.y);
+    ctx.drawImage(map_img, this.state.camera.x,this.state.camera.y, map_img.width*(this.state.scale_factor), map_img.height*(this.state.scale_factor));
 
     if(this.state.placeing_marker) {
-      ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
-      ctx.fillRect(mousePos.x,mousePos.y,3,30);
-      ctx.fillRect(mousePos.x,mousePos.y,ctx.measureText("         ").width+4,16);
-      this.bottom_y = this.y + 10;
+      ctx.save();
+
+      ctx.translate(mousePos.x, mousePos.y);
+
+      ctx.beginPath();
+      ctx.moveTo(0,0);
+      ctx.bezierCurveTo(2,-10,-20,-25,0,-30);
+      ctx.bezierCurveTo(20,-25,-2,-10,0,0);
+      ctx.fillStyle="rgba(0.5,0.5,0.5,0.5)";
+      ctx.fill();
+      ctx.strokeStyle="black";
+      ctx.lineWidth=1.5;
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(0,-21,3,0,Math.PI*2);
+      ctx.closePath();
+      ctx.fillStyle="black";
+      ctx.fill();
+
+      ctx.restore();
     }
 
     var renderorder = [...this.state.entities];
     renderorder.sort(function(a,b){return a.bottom_y-b.bottom_y;})
     for(var i = 0; i < renderorder.length; i++) {
-      renderorder[i].draw(ctx, this.state.camera);
+      renderorder[i].draw(ctx, this.state.camera, this.state.scale_factor);
     }
   }
 
@@ -92,7 +180,7 @@ class Skeleton extends Component {
       console.log(result);
       let output = [];
       for(let i = 0; i < result.length; i++) {
-        output.push(this.make_marker(result[i].x_pos, result[i].y_pos, "lightblue", result[i].name.split(" ")[0]));
+        output.push(this.make_marker(result[i].x_pos, result[i].y_pos, "#E86F55", result[i].name.split(" ")[0]));
       }
       console.log(output);
       this.setState({
@@ -104,7 +192,7 @@ class Skeleton extends Component {
       console.log(result);
       let output = [];
       for(let i = 0; i < result.length; i++) {
-        output.push(this.make_marker(result[i].x_pos, result[i].y_pos, "lightblue", result[i].name.split(" ")[0]));
+        output.push(this.make_marker(result[i].x_pos, result[i].y_pos, "#E86F55", result[i].name.split(" ")[0]));
       }
       console.log(output);
       this.setState({
@@ -143,6 +231,8 @@ class Skeleton extends Component {
 
     const canvas = this.refs.canvas
     const ctx = canvas.getContext("2d")
+
+    ctx.imageSmoothingQuality = "high"
 
     canvas.width  = window.innerWidth;
     canvas.height = window.innerHeight;
@@ -188,8 +278,8 @@ class Skeleton extends Component {
 
       if(this.state.placeing_marker) {
         let post_body = {
-          x: mousePos.x-this.state.camera.x,
-          y: mousePos.y-this.state.camera.y,
+          x: (mousePos.x-this.state.camera.x)/this.state.scale_factor,
+          y: (mousePos.y-this.state.camera.y)/this.state.scale_factor,
         }
 
         window.navigator.vibrate(200);
@@ -198,7 +288,7 @@ class Skeleton extends Component {
           console.log("posted direction");
         });
 
-        this.state.entities.push(this.make_marker(mousePos.x-this.state.camera.x, mousePos.y-this.state.camera.y, "rgba(0, 0, 0, 0.5)", "         "));
+        this.state.entities.push(this.make_marker((mousePos.x-this.state.camera.x)/this.state.scale_factor, (mousePos.y-this.state.camera.y)/this.state.scale_factor, "rgba(0, 0, 0, 0.5)", "         "));
         this.setState({placeing_marker : false});
       }
     });
@@ -242,34 +332,37 @@ class Skeleton extends Component {
     return (
       <>
       <div>
-        <div className = "brand">
-          <h1> Emo(na)tion </h1>
-          <p> Where are you feeling? </p>
-        </div>
         <canvas ref="canvas"/>
         <div className = "over">
-          {this.props.userId ? (
-            <>
-            <div className = "login">
-              <GoogleLogout
+          <div className = "topbar">
+            <h1> Emo(na)tion </h1>
+            <p> Where are you feeling? </p>
+          </div>
+          <div className = "content">
+            {this.props.userId ? (
+              <>
+              <div className = "login">
+                <GoogleLogout
+                  clientId={GOOGLE_CLIENT_ID}
+                  buttonText="Logout"
+                  onLogoutSuccess={this.props.handleLogout}
+                  onFailure={(err) => console.log(err)}
+                />
+              </div>
+              <button onClick = {this.place_marker}>Place Marker</button>
+              </>
+            ) : (
+              <div className = "login">
+              <GoogleLogin
                 clientId={GOOGLE_CLIENT_ID}
-                buttonText="Logout"
-                onLogoutSuccess={this.props.handleLogout}
+                buttonText="Login"
+                onSuccess={this.props.handleLogin}
                 onFailure={(err) => console.log(err)}
               />
-            </div>
-            <button onClick = {this.place_marker}>Place Marker</button>
-            </>
-          ) : (
-            <div className = "login">
-            <GoogleLogin
-              clientId={GOOGLE_CLIENT_ID}
-              buttonText="Login"
-              onSuccess={this.props.handleLogin}
-              onFailure={(err) => console.log(err)}
-            />
-            </div>
-          )}
+              </div>
+            )}
+            <div className = "zoom"> <button onClick = {this.zoom_in}> + </button><button onClick = {this.zoom_out}>-</button></div>
+          </div>
         </div>
         <img ref="image" src={map_img} className="hidden"/>
       </div>
