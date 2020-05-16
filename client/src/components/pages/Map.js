@@ -155,14 +155,6 @@ class Skeleton extends Component {
       ctx.bezierCurveTo(20,-25,-2,-10,0,0);
       ctx.fillStyle="rgba(0.5,0.5,0.5,0.5)";
       ctx.fill();
-      ctx.strokeStyle="black";
-      ctx.lineWidth=1.5;
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.arc(0,-21,3,0,Math.PI*2);
-      ctx.closePath();
-      ctx.fillStyle="black";
-      ctx.fill();
 
       ctx.restore();
     }
