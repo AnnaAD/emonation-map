@@ -192,6 +192,8 @@ class Skeleton extends Component {
           y: mousePos.y-this.state.camera.y,
         }
 
+        window.navigator.vibrate(200);
+
         post("/api/marker", post_body).then((result) => {
           console.log("posted direction");
         });
