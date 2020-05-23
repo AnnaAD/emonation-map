@@ -224,7 +224,7 @@ class Skeleton extends Component {
     const canvas = this.refs.canvas
     const ctx = canvas.getContext("2d")
 
-    ctx.imageSmoothingQuality = "high"
+    ctx.imageSmoothingQuality = "high";
 
     canvas.width  = window.innerWidth;
     canvas.height = window.innerHeight;
@@ -280,7 +280,7 @@ class Skeleton extends Component {
           console.log("posted direction");
         });
 
-        this.state.entities.push(this.make_marker((mousePos.x-this.state.camera.x)/this.state.scale_factor, (mousePos.y-this.state.camera.y)/this.state.scale_factor, "rgba(0, 0, 0, 0.5)", "         "));
+        this.state.entities.push(this.make_marker((mousePos.x-this.state.camera.x)/this.state.scale_factor, (mousePos.y-this.state.camera.y)/this.state.scale_factor, "rgba(0, 0, 0, 0.5)", ""));
         this.setState({placeing_marker : false});
       }
     });
@@ -293,15 +293,15 @@ class Skeleton extends Component {
 
       if(this.state.placeing_marker) {
         let post_body = {
-          x: mousePos.x-this.state.camera.x,
-          y: mousePos.y-this.state.camera.y,
+          x: (mousePos.x-this.state.camera.x)/this.state.scale_factor,
+          y: (mousePos.y-this.state.camera.y)/this.state.scale_factor,
         }
 
         post("/api/marker", post_body).then((result) => {
           console.log("posted direction");
         });
 
-        this.state.entities.push(this.make_marker(mousePos.x-this.state.camera.x, mousePos.y-this.state.camera.y, "rgba(0, 0, 0, 0.5)", "         "));
+        this.state.entities.push(this.make_marker((mousePos.x-this.state.camera.x)/this.state.scale_factor, (mousePos.y-this.state.camera.y)/this.state.scale_factor, "rgba(0, 0, 0, 0.5)", ""));
         this.setState({placeing_marker : false});
       }
     });
